@@ -1,4 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 //Add CORS policy access
@@ -28,6 +32,21 @@ string connectionString = builder.Configuration.GetConnectionString("API");
 builder.Services.AddDbContext<T2207A_API.Entities.T2207aApiContext>(
     options => options.UseSqlServer(connectionString)
     );
+// Add Authetication JWT Bearer
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options => {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = true,
+                ValidateIssuer = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidAudience = builder.Configuration["JWT:Audience"],
+                ValidIssuer = builder.Configuration["JWT:Issuer"],
+                IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(builder.Configuration["JWT:Key"]))
+            };
+        });
 
 var app = builder.Build();
 
@@ -41,6 +60,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 app.UseHttpsRedirection();
+app.UseAuthentication();
 
 app.UseAuthorization();
 
